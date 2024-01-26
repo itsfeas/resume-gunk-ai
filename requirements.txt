@@ -53,6 +53,7 @@ multidict==6.0.4
 mypy-extensions==1.0.0
 numpy==1.26.2
 packaging==23.2
+pdfminer.six==20231228
 proto-plus==1.23.0
 protobuf==4.25.1
 pyasn1==0.5.1

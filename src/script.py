@@ -1,22 +1,15 @@
 from os.path import join, dirname
 from dotenv import load_dotenv
-import db.rtdb.client as rtdb
-import db.storage.client as storage
-from repository.gen_queue_repo import get_one_queued_img
-from repository.img_download_repo import get_url_from_img_id
-from ai.img2text import gemini_img2desc
-from ai.replicate import img2img_sdxl_cn
-from ai.prompt.v5 import img2desc_prompt, img2img_prompt, img2img_negative
-from langchain.utilities.dalle_image_generator import DallEAPIWrapper
+from pdfminer.high_level import extract_pages
 
 if __name__ == "__main__":
     # Load environment variables from the .env file
     dotenv_path = join(dirname(__file__), 'env/.env')
     load_dotenv(dotenv_path)
 
-    llm = DallEAPIWrapper(model="dall-e-3")
-    image_url = llm.run("society if we used lisp (the programming lang)")
-    print(image_url)
+    for page_layout in extract_pages("./src/dataset/resume.pdf"):
+        for element in page_layout:
+            print(element)
 
     # rtdb.init_client()
     # # storage.init_client()

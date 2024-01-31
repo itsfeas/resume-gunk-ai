@@ -129,8 +129,9 @@ if __name__ == "__main__":
 	#Train the model
 	print("Training Model...")
 	# model = MLPClassifier(random_state=1, max_iter=300, hidden_layer_sizes=[100, 200, 30])
-	# model = MLPClassifier(random_state=1, max_iter=10000, hidden_layer_sizes=[1299, 2000, 1924, 1508])
-	# model = MLPClassifier(random_state=1, early_stopping=True, max_iter=15000, hidden_layer_sizes=[1299, 1102, 1680, 1924, 1508])
+	# model = MLPClassifier(random_state=1, early_stopping=True, max_iter=2500,
+	# 				   learning_rate="adaptive", hidden_layer_sizes=[2224, 2341, 2200, 2200, 2200])
+	# model = MLPClassifier(random_state=1, early_stopping=True, max_iter=10000, hidden_layer_sizes=[1299, 1102, 1680, 1924, 1508])
 	model = RandomForestClassifier(n_estimators = 500, random_state = 42, max_depth=40)
 	# model = LinearSVC(C=1.0, class_weight=None, dual=True, fit_intercept=True,
 	#  intercept_scaling=1, loss='squared_hinge', max_iter=100000,

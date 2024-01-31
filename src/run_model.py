@@ -18,7 +18,6 @@ import nltk
 from nltk.tokenize import regexp_tokenize
 from collections import Counter
 from nltk import pos_tag
-from dataset.model.traindata import PDFS, LABELS
 import pandas as pd
 import re
 from ai.resume_split.skills import dev_skills
@@ -36,7 +35,7 @@ if __name__ == "__main__":
 	nltk.download('punkt')
 	nltk.download('averaged_perceptron_tagger')
 
-	text, df = full_feature_set("./src/dataset/train_resume1.pdf")
+	text, df = full_feature_set("./src/ai/resume_split/dataset/resume.pdf")
 	
 	print("Loading Model...")
 	loaded_model = joblib.load(open(MODEL_NAME, 'rb'))

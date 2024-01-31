@@ -22,7 +22,6 @@ from collections import Counter
 from nltk import pos_tag
 from ai.resume_split.skills import dev_skills
 from ai.resume_split.features import full_feature_set, generate_features, parse_to_list
-from dataset.model.traindata import PDFS, LABELS
 import pandas as pd
 import re
 
@@ -37,6 +36,11 @@ POS_TAG_SET = ["CC","CD","DT","EX","FW","IN","JJ","JJR","JJS","LS","MD","NN","NN
 DEV_SKILLS_SET = set([skill.lower() for skill in dev_skills])
 STOPWORDS = stopwords.words('english')
 # def closeness_features(text_split: list[str]):
+
+def split_lists(labeled_list):
+    labels = [label for label, _ in labeled_list]
+    words = [word for _, word in labeled_list]
+    return labels, words
 
 def replace_extension(file_name):
 	# Find the position of the last dot in the file name
@@ -56,7 +60,7 @@ def replace_extension(file_name):
 
 def parse_label_file(file_path):
 	data = []
-	with open(file_path, 'r') as file:
+	with open(file_path, 'r', encoding="utf8") as file:
 		for line in file:
 			# Split each line into two parts using whitespace as a separator
 			parts = line.strip().split()
@@ -101,63 +105,56 @@ if __name__ == "__main__":
 	# 	tot_features.append(df)
 	PATH = "./src/ai/resume_split/dataset/"
 	for i, p in enumerate(list_files(PATH)):
-		text = extract_text(PATH+p, laparams=LAParams(char_margin=200))
-		print(text)
-	# 	labels = parse_label_file(PATH+"labels/"+replace_extension(p))
-	# 	Y, X = split_lists(labels)
-	# 	filtered, df = full_feature_set(PATH+replace_extension(p))
-	# 	print(len(parse_to_list(text)), len(X))
-	# 	j = 0
-	# 	for a, b in zip(X, parse_to_list(text)):
-	# 		if a != b:
-	# 			print(j, a, b)
-	# 			break
-	# 		j += 1
-	# 	print(i)
-	# 	df['Labels'] = Y
-	# 	# print(df)
-	# 	tot_features.append(df)
-	# # for f in tot_features:
-	# # 	print(f.columns)
-	# df = pd.concat(tot_features, axis=0, ignore_index=True)
+		if not p.startswith("train_"):
+			continue
+		text = extract_text(PATH+p, laparams=LAParams(char_margin=200, line_margin=1))
+		labels = parse_label_file(PATH+"labelled_words/"+replace_extension(p))
+		Y, X = split_lists(labels)
+		filtered, df = full_feature_set(PATH+p)
+		df['Labels'] = Y
+		# print(df)
+		tot_features.append(df)
+	# for f in tot_features:
+	# 	print(f.columns)
+	df = pd.concat(tot_features, axis=0, ignore_index=True)
 	
-	# # Random Sampling
-	# df = random_sampling_remove_null(df, 0.8)
+	# Random Sampling
+	df = random_sampling_remove_null(df, 0.75)
 
-	# #Split data into a training and testing set
-	# Y = df['Labels'].values
-	# X = df.drop(labels=['Labels'], axis=1)
-	# X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.1, random_state=19)
+	#Split data into a training and testing set
+	Y = df['Labels'].values
+	X = df.drop(labels=['Labels'], axis=1)
+	X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.1, random_state=19)
 
-	# #Train the model
-	# print("Training Model...")
-	# # model = MLPClassifier(random_state=1, max_iter=300, hidden_layer_sizes=[100, 200, 30])
-	# # model = MLPClassifier(random_state=1, max_iter=1000, hidden_layer_sizes=[1000, 2000, 300])
-	# # model = MLPClassifier(random_state=1, early_stopping=True, max_iter=2500, hidden_layer_sizes=[1299, 1102, 1680, 1924, 1508])
-	# model = RandomForestClassifier(n_estimators = 300, random_state = 42, max_depth=40)
-	# # model = LinearSVC(C=1.0, class_weight=None, dual=True, fit_intercept=True,
-	# #  intercept_scaling=1, loss='squared_hinge', max_iter=100000,
-	# #  multi_class='ovr', penalty='l2', random_state=None, tol=0.0001,
-	# #  verbose=0)
-	# # model = SVC(C=1.0, cache_size=1000, class_weight=None, coef0=0.0, degree=3,
-	# # 	gamma=0.0, kernel='rbf', max_iter=-1, probability=False, random_state=None,
-	# # 	shrinking=True, tol=0.0001, verbose=False)
-	# model.fit(X_train, Y_train)
+	#Train the model
+	print("Training Model...")
+	# model = MLPClassifier(random_state=1, max_iter=300, hidden_layer_sizes=[100, 200, 30])
+	# model = MLPClassifier(random_state=1, max_iter=10000, hidden_layer_sizes=[1299, 2000, 1924, 1508])
+	# model = MLPClassifier(random_state=1, early_stopping=True, max_iter=15000, hidden_layer_sizes=[1299, 1102, 1680, 1924, 1508])
+	model = RandomForestClassifier(n_estimators = 500, random_state = 42, max_depth=40)
+	# model = LinearSVC(C=1.0, class_weight=None, dual=True, fit_intercept=True,
+	#  intercept_scaling=1, loss='squared_hinge', max_iter=100000,
+	#  multi_class='ovr', penalty='l2', random_state=None, tol=0.0001,
+	#  verbose=0)
+	# model = SVC(C=1.0, cache_size=1000, class_weight=None, coef0=0.0, degree=3,
+	# 	gamma=0.0, kernel='rbf', max_iter=-1, probability=False, random_state=None,
+	# 	shrinking=True, tol=0.0001, verbose=False)
+	model.fit(X_train, Y_train)
 
-	# # Test accuracy on both sets
-	# print("Testing Accuracy...")
-	# prediction_test_train = model.predict(X_train)
-	# prediction_test = model.predict(X_test)
+	# Test accuracy on both sets
+	print("Testing Accuracy...")
+	prediction_test_train = model.predict(X_train)
+	prediction_test = model.predict(X_test)
 
-	# print ("Accuracy on training data = ", metrics.accuracy_score(Y_train, prediction_test_train))
-	# print ("Accuracy = ", metrics.accuracy_score(Y_test, prediction_test))
+	print ("Accuracy on training data = ", metrics.accuracy_score(Y_train, prediction_test_train))
+	print ("Accuracy = ", metrics.accuracy_score(Y_test, prediction_test))
 
-	# # # Rank features by importance
-	# # importances = list(model.feature_importances_)
-	# # feature_list = list(X.columns)
-	# # feature_imp = pd.Series(model.feature_importances_,index=feature_list).sort_values(ascending=False)
-	# # print(feature_imp)
+	# # Rank features by importance
+	# importances = list(model.feature_importances_)
+	# feature_list = list(X.columns)
+	# feature_imp = pd.Series(model.feature_importances_,index=feature_list).sort_values(ascending=False)
+	# print(feature_imp)
 
-	# #Save Model to file
-	# print("Dumping Model...")
-	# joblib.dump(model, open(MODEL_NAME, 'wb'))
+	#Save Model to file
+	print("Dumping Model...")
+	joblib.dump(model, open(MODEL_NAME, 'wb'))

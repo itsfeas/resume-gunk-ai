@@ -20,7 +20,6 @@ from nltk.corpus import stopwords
 from nltk.tokenize import regexp_tokenize
 from collections import Counter
 from nltk import pos_tag
-from dataset.model.traindata import PDFS, LABELS
 import pandas as pd
 import re
 
@@ -34,7 +33,7 @@ dev_skills = ["Python", "JavaScript", "Java", "C++", "C#", "Ruby", "PHP", "Swift
 "CockroachDB" "IntelliJ", "Eclipse", "Sublime", "Atom", "Vim", "Jupyter", "Sublime", "Atom", "Vim", "Jupyter", "TensorFlow", "PyTorch", "Keras", "OpenCV", "Pandas", "NumPy", "SciPy", "Matplotlib", "D3js", "React", "ReactJs", "Angular", "Vuejs", "Vue", "Redux", "MobX", "Expressjs", "Django", "Flask", "Ruby",
 "Rails" "Laravel", "Spring", "Boot", "NET", "ASPNET", "Nodejs", "GraphQL", "Apollo", "SOAP", "OAuth", "JWT", "OAuth2", "OpenID", "WebSocket", "gRPC", "RabbitMQ", "Kafka", "MQTT", "ActiveMQ", "Elasticsearch", "Logstash", "Kibana", "Splunk", "Grafana", "Prometheus", "Nagios", "JMeter", "Gatling", "SSL/TLS", "OWASP", "Blockchain", "Ethereum", "Solidity", "Corda", "Truffle", "Ganache", "Web3js", "Chrome", "Firefox", "Safari", "iOS", "Android", "Flutter", "Xamarin", "Ionic", "AR", "VR", "Unity", "Unreal", "UXUI", "UX", "UI", "Wireframing", "Prototyping", "Sketch", "Sqlite", "Figma", "InVision", "Zeplin", "Zeppelin", "Confluence", "Slack", "JupyterHub", "Office", "Trello", "Asana", "GitLab", "Git", "nextjs", "prisma", "puppeteer", "Bitbucket", "GitKraken",
 "SourceTree"]
-CLOSENESS_WORDS = ['', 'stopword', 'using', 'MONTH', 'fullstack', 'application', 'c', 'languages', 'NUM', 'club', 'api', 'education', 'implemented', 'frontend', 'integrated', 'database', 'PHONE', 'engineering', 'university', 'developed', 'SKILL', 'web', 'tools', 'EMAIL', 'data', 'leadership', 'alberta', 'skills', 'experience', 'developer', 'projects', 'designed', 'software', 'technical', 'model']
+CLOSENESS_WORDS = ['', 'linkedin', 'github', 'stopword', 'MONTH', 'languages', 'NUM', 'club', 'education', 'PHONE', 'university', 'tools', 'EMAIL', 'leadership', 'skills', 'experience', 'projects', 'software', 'technical', 'model', 'work', 'languages', 'frameworks', 'libraries', 'relevant', 'coursework', 'achievements', 'portfolio']
 POS_TAG_SET = ["CC","CD","DT","EX","FW","IN","JJ","JJR","JJS","LS","MD","NN","NNS","NNP","NNPS","PDT","POS","PRP","PRP$","RB","RBR","RBS","RP","SYM","TO","UH","VB","VBD","VBG","VBN","VBP","VBZ","WDT","WP","WP$","WRB"]
 DEV_SKILLS_SET = set([skill.lower() for skill in dev_skills])
 STOPWORDS = stopwords.words('english')
@@ -66,6 +65,24 @@ def closeness_features(text_split: list[str], closeness_words: list[str]):
 def word_to_normalized_histogram(word):
 	# Define the bins
 	bins = 'abcdefghijklmnopqrstuvwxyz'
+
+	# Initialize the histogram with zeros for each bin
+	histogram = {char: 0 for char in bins}
+
+	# Count the occurrences of each character in the word
+	for char in word:
+		if char in histogram:
+			histogram[char] += 1
+
+	# Calculate the total number of characters in the word
+	total_chars = len(word) if len(word) > 0 else 1
+	# Normalize the histogram values by dividing by the total number of characters
+	return {char: count / total_chars for char, count in histogram.items()}
+
+@cache
+def punctuation_histogram(word):
+	# Define the bins
+	bins = ':;,.!?•[]|(){}<>""*^&%$#@~+-=0123456789'
 
 	# Initialize the histogram with zeros for each bin
 	histogram = {char: 0 for char in bins}
@@ -140,11 +157,11 @@ def count_punctuation(sentence):
     return sum(1 for char in sentence if char in string.punctuation)
 
 def full_feature_set(resume_path):
-		text = extract_text(resume_path, laparams= LAParams(boxes_flow=None))
+		text = extract_text(resume_path, laparams= LAParams(char_margin=200, line_margin=1))
 		text_split = parse_to_list(text)
 		return generate_features(text, text_split)
 
-def generate_features(text, text_split):
+def generate_features(text: str, text_split):
 		text_split = parse_to_list(text)
 		print(text_split)
 		filtered = filtered_list(text_split)
@@ -153,23 +170,36 @@ def generate_features(text, text_split):
 		print(filtered)
 
 		features = []
-		closeness = closeness_features(filtered, CLOSENESS_WORDS)
-		punctuation_counts = [count_punctuation(w) for w in text_split]
-		histograms = [list(word_to_normalized_histogram(w).values()) for w in filtered]
-		pos_tag_closeness = closeness_features(pos_tag_feature, POS_TAG_SET)
+		f_closeness = closeness_features(filtered, CLOSENESS_WORDS)
+		# punctuation_counts = [count_punctuation(w) for w in text_split]
+		# is_skill = [w in DEV_SKILLS_SET for w in text_split]
+		f_histograms = [list(word_to_normalized_histogram(w).values()) for w in filtered]
+		f_punc_histograms = [list(punctuation_histogram(w).values()) for w in text_split]
+		f_len = [len(w) for w in text_split]
+		f_pos_tag_closeness = closeness_features(pos_tag_feature, POS_TAG_SET)
 
-		df_histograms = pd.DataFrame(histograms, columns=range(len(histograms[0])))
-		df_closeness = pd.DataFrame(closeness, columns=range(len(closeness[0])))
-		df_pos_tag = pd.DataFrame(pos_tag_feature, columns=range(len(pos_tag_feature[0][0])))
-		df_pos_tag_closeness = pd.DataFrame(pos_tag_closeness, columns=range(len(pos_tag_closeness[0])))
-		df_punctuation = pd.DataFrame(punctuation_counts)
+		# line context
+		lines = [l for l in text.splitlines() if l]
+		num_per_line = [[(len(re.sub(pattern=f'\d+', string=l, repl=""))/len(l)) for i in l.split()] for l in lines]
+		f_num_per_line = []
+		for l in num_per_line: f_num_per_line.extend(l)
+
+		df_histograms = pd.DataFrame(f_histograms)
+		df_closeness = pd.DataFrame(f_closeness)
+		df_pos_tag = pd.DataFrame(pos_tag_feature)
+		df_pos_tag_closeness = pd.DataFrame(f_pos_tag_closeness)
+		df_punc_histograms = pd.DataFrame(f_punc_histograms)
+		df_len = pd.DataFrame(f_len)
+		df_num_per_line = pd.DataFrame(f_num_per_line)
+		# df_is_skill = pd.DataFrame(is_skill)
+
 
 		# encode
 		enc = OrdinalEncoder()
 		enc.fit(df_pos_tag)
 		df_pos_tag = pd.DataFrame(enc.transform(df_pos_tag))
 
-		df = pd.concat([df_histograms, df_closeness, df_pos_tag, df_pos_tag_closeness, df_punctuation], axis=1)
+		df = pd.concat([df_histograms, df_num_per_line, df_closeness, df_len, df_pos_tag, df_pos_tag_closeness, df_punc_histograms], axis=1)
 		return text, df
 
 

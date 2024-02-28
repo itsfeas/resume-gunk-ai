@@ -21,7 +21,7 @@ from nltk.tokenize import regexp_tokenize
 from collections import Counter
 from nltk import pos_tag
 from ai.resume_split.skills import dev_skills
-from ai.resume_split.features import full_feature_set, generate_features, parse_to_list
+from ai.resume_split.features import full_feature_set, load_word2vec_model, generate_features, parse_to_list
 import pandas as pd
 import re
 
@@ -104,13 +104,14 @@ if __name__ == "__main__":
 	# 	# print(df)
 	# 	tot_features.append(df)
 	PATH = "./src/ai/resume_split/dataset/"
+	word2vec_model = load_word2vec_model("./src/ai/resume_split/dataset/embeddings/trained/pruned.word2vec.txt")
 	for i, p in enumerate(list_files(PATH)):
 		if not p.startswith("train_"):
 			continue
 		text = extract_text(PATH+p, laparams=LAParams(char_margin=200, line_margin=1))
 		labels = parse_label_file(PATH+"labelled_words/"+replace_extension(p))
 		Y, X = split_lists(labels)
-		filtered, df = full_feature_set(PATH+p)
+		filtered, df = full_feature_set(PATH+p, word2vec_model)
 		df['Labels'] = Y
 		# print(df)
 		tot_features.append(df)

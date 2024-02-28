@@ -7,6 +7,7 @@ import joblib
 import numpy as np
 from pdfminer.high_level import extract_pages
 from pdfminer.high_level import extract_text, LAParams
+import gensim
 from sklearn import metrics
 from sklearn.calibration import LinearSVC
 from sklearn.model_selection import train_test_split
@@ -15,6 +16,7 @@ from sklearn.svm import SVC
 from sortedcontainers import SortedList
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import OrdinalEncoder
+from sklearn.impute import SimpleImputer
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import regexp_tokenize
@@ -34,9 +36,11 @@ dev_skills = ["Python", "JavaScript", "Java", "C++", "C#", "Ruby", "PHP", "Swift
 "Rails" "Laravel", "Spring", "Boot", "NET", "ASPNET", "Nodejs", "GraphQL", "Apollo", "SOAP", "OAuth", "JWT", "OAuth2", "OpenID", "WebSocket", "gRPC", "RabbitMQ", "Kafka", "MQTT", "ActiveMQ", "Elasticsearch", "Logstash", "Kibana", "Splunk", "Grafana", "Prometheus", "Nagios", "JMeter", "Gatling", "SSL/TLS", "OWASP", "Blockchain", "Ethereum", "Solidity", "Corda", "Truffle", "Ganache", "Web3js", "Chrome", "Firefox", "Safari", "iOS", "Android", "Flutter", "Xamarin", "Ionic", "AR", "VR", "Unity", "Unreal", "UXUI", "UX", "UI", "Wireframing", "Prototyping", "Sketch", "Sqlite", "Figma", "InVision", "Zeplin", "Zeppelin", "Confluence", "Slack", "JupyterHub", "Office", "Trello", "Asana", "GitLab", "Git", "nextjs", "prisma", "puppeteer", "Bitbucket", "GitKraken",
 "SourceTree"]
 CLOSENESS_WORDS = ['', 'linkedin', 'github', 'stopword', 'MONTH', 'languages', 'NUM', 'club', 'education', 'PHONE', 'university', 'tools', 'EMAIL', 'leadership', 'skills', 'experience', 'projects', 'software', 'technical', 'model', 'work', 'languages', 'frameworks', 'libraries', 'relevant', 'coursework', 'achievements', 'portfolio']
-POS_TAG_SET = ["CC","CD","DT","EX","FW","IN","JJ","JJR","JJS","LS","MD","NN","NNS","NNP","NNPS","PDT","POS","PRP","PRP$","RB","RBR","RBS","RP","SYM","TO","UH","VB","VBD","VBG","VBN","VBP","VBZ","WDT","WP","WP$","WRB"]
+POS_TAG_SET = ["CC","CD","DT","EX","FW","IN","JJ","JJR","JJS","LS","MD","NN","NNS","NNP","NNPS","PDT","POS","PRP","PRP$","RB","RBR","RBS","RP","SYM","TO","UH","VB","VBD","VBG","VBN","VBP","VBZ","WDT","WP","WP$","WRB", ""]
+POS_TAG_SET_TRUE = set(POS_TAG_SET)
 DEV_SKILLS_SET = set([skill.lower() for skill in dev_skills])
 STOPWORDS = stopwords.words('english')
+PRUNED_WORD2VEC_PATH = "./dataset/embeddings/trained/pruned.word2vec.txt"
 # def closeness_features(text_split: list[str]):
 
 def convert_months(month_pattern, month_mapping, text):
@@ -148,20 +152,25 @@ def filtered_list(split_s: list[str]):
 		filter_s[i] = 'NUM' if filter_s[i].isnumeric() else filter_s[i]
 	return filter_s
 
+def load_word2vec_model(path: str):
+	# f = open(path, "r")
+	# word2vec_sampled = f.read()
+	return gensim.models.KeyedVectors.load_word2vec_format(fname=path, binary=False)
+
 def get_pos_tags(text):
 	words = regexp_tokenize(text=text, pattern="\S+")
 	pos_tags = pos_tag(words)
-	return [p[1] for p in pos_tags] + ['NNP']
+	return [p[1] if p[1] in POS_TAG_SET_TRUE else "" for p in pos_tags] + ['NNP']
 
 def count_punctuation(sentence):
     return sum(1 for char in sentence if char in string.punctuation)
 
-def full_feature_set(resume_path):
+def full_feature_set(resume_path: str, model: gensim.models.KeyedVectors):
 		text = extract_text(resume_path, laparams= LAParams(char_margin=200, line_margin=1))
 		text_split = parse_to_list(text)
-		return generate_features(text, text_split)
+		return generate_features(text, text_split, model)
 
-def generate_features(text: str, text_split):
+def generate_features(text: str, text_split, model: gensim.models.KeyedVectors):
 		text_split = parse_to_list(text)
 		print(text_split)
 		filtered = filtered_list(text_split)
@@ -174,8 +183,10 @@ def generate_features(text: str, text_split):
 		# punctuation_counts = [count_punctuation(w) for w in text_split]
 		# is_skill = [w in DEV_SKILLS_SET for w in text_split]
 		f_histograms = [list(word_to_normalized_histogram(w).values()) for w in filtered]
+		f_embeddings = [model[w] if model.has_index_for(w) else model["null"] for w in filtered]
 		f_punc_histograms = [list(punctuation_histogram(w).values()) for w in text_split]
 		f_len = [len(w) for w in text_split]
+		f_uppercase = [(sum(c.isupper() for c in w)/len(w)) if w else 0 for w in text_split]
 		f_pos_tag_closeness = closeness_features(pos_tag_feature, POS_TAG_SET)
 
 		# line context
@@ -184,22 +195,28 @@ def generate_features(text: str, text_split):
 		f_num_per_line = []
 		for l in num_per_line: f_num_per_line.extend(l)
 
-		df_histograms = pd.DataFrame(f_histograms)
-		df_closeness = pd.DataFrame(f_closeness)
-		df_pos_tag = pd.DataFrame(pos_tag_feature)
-		df_pos_tag_closeness = pd.DataFrame(f_pos_tag_closeness)
-		df_punc_histograms = pd.DataFrame(f_punc_histograms)
-		df_len = pd.DataFrame(f_len)
-		df_num_per_line = pd.DataFrame(f_num_per_line)
+		df_histograms = pd.DataFrame(f_histograms).add_prefix('hist_')
+		df_closeness = pd.DataFrame(f_closeness).add_prefix('closeness_')
+		df_pos_tag = pd.DataFrame(pos_tag_feature).add_prefix('pos_tag_')
+		df_pos_tag_closeness = pd.DataFrame(f_pos_tag_closeness).add_prefix('pos_tag_closeness_')
+		df_punc_histograms = pd.DataFrame(f_punc_histograms).add_prefix('punc_hist_')
+		df_len = pd.DataFrame(f_len).add_prefix('len_')
+		df_num_per_line = pd.DataFrame(f_num_per_line).add_prefix('num_per_line_')
+		df_embeddings = pd.DataFrame(f_embeddings).add_prefix('embeddings_')
+		df_upper = pd.DataFrame(f_uppercase).add_prefix('uppercase_')
 		# df_is_skill = pd.DataFrame(is_skill)
-
 
 		# encode
 		enc = OrdinalEncoder()
-		enc.fit(df_pos_tag)
+		enc.fit(pd.DataFrame(POS_TAG_SET).add_prefix('pos_tag_'))
 		df_pos_tag = pd.DataFrame(enc.transform(df_pos_tag))
 
-		df = pd.concat([df_histograms, df_num_per_line, df_closeness, df_len, df_pos_tag, df_pos_tag_closeness, df_punc_histograms], axis=1)
+		df = pd.concat([df_embeddings, df_upper, df_num_per_line, df_pos_tag, df_pos_tag_closeness, df_punc_histograms], axis=1)
+		df.fillna(0, inplace=True)
+		df.columns = df.columns.astype(str)
+		
+		# imputer = SimpleImputer(strategy='constant', fill_value=0)
+		# df = pd.DataFrame(imputer.fit_transform(df), columns=df.columns)
 		return text, df
 
 

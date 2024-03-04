@@ -38,7 +38,9 @@ def split_resume_to_sections(text: str, initial_class, section_header_set: set[s
 		tagger[i][0] = prev
 	return tagger
 
-def get_work_exp_entries()
+# def get_work_exp_entries(tagged_lst: list[list[str]]):
+# 	for 
+
 
 if __name__ == "__main__":
 	# Load environment variables from the .env file

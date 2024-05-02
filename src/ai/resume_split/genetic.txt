@@ -1,0 +1,2 @@
+Best Individual (Hidden Layers, Neurons per Layer): 0.8524590163934426
+Best Fitness: [2224, 2341, 530]

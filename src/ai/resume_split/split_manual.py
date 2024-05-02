@@ -26,6 +26,10 @@ for key, value_list in SECTIONS_DICT.items():
 	for item in value_list:
 		KEYWORD_TO_SECTION_DICT[item] = key
 
+SECTION_HEADERS_SET = set()
+for v in SECTIONS_DICT.values():
+	SECTION_HEADERS_SET |= set(v)
+
 def split_resume_to_sections(text: str, initial_class, section_header_set: set[str], keyword_to_section_dict: dict):
 	tagger = [["", l.lower()] for l in text.splitlines() if l]
 	prev = initial_class
@@ -44,15 +48,15 @@ def split_resume_to_sections(text: str, initial_class, section_header_set: set[s
 
 if __name__ == "__main__":
 	# Load environment variables from the .env file
-	section_headers_set = set()
+	SECTION_HEADERS_SET = set()
 	for v in SECTIONS_DICT.values():
-		section_headers_set |= set(v)
+		SECTION_HEADERS_SET |= set(v)
 	dotenv_path = join(dirname(__file__), '../../.env')
 	load_dotenv(dotenv_path)
 	file = "resume_fiaz.pdf"
 	path = f"./dataset/{file if len(sys.argv)<2 else sys.argv[1]}"
 	text = extract_text(path, laparams=LAParams(char_margin=200, line_margin=1))
-	tagged = split_resume_to_sections(text, "name", section_headers_set, KEYWORD_TO_SECTION_DICT)
+	tagged = split_resume_to_sections(text, "name", SECTION_HEADERS_SET, KEYWORD_TO_SECTION_DICT)
 	for r in tagged:
 		print(r)
 	

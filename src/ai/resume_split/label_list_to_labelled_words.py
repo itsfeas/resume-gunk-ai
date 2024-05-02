@@ -12,88 +12,67 @@ def split_lines_with_labels(text):
 
 # Example usage with the provided text
 input_text = """
+[NAME] Alishbah Farooq
+[CONTACT] (587)-991-9988 alishbah@ualberta.ca www.linkedin.com/in/alishbah
 
-[NAME] Raquib Lavani
+[HEADER] EDUCATION
+[SUBHEADER] BSc. Specialization in Mathematics and Finance
+[SUBHEADER] University of Alberta
+[HEADER] PROJECTS
 
-[CONTACT] 587-598-3200 | r.raquib01@gmail.com | raquibkhan.com | linkedin.com/in/lavani | github.com/raquibk
+[SUBHEADER] 2nd Place in FemTech Futures Hackathon
 
-[HEADER] Education
+[SUBHEADER] | April 2023
 
-[SUBHEADER] University of Alberta Edmonton, AB
-[SUBHEADER] Bachelor of Science in Software Engineering Co-op
-[SUBHEADER] Sep. 2019 – May 2024
+[NULL] Using Unity, worked in a team to make a maze including obstacles and a car to navigate through
 
-[NULL] • Technical Skills
+[NULL] Meta Tic Tac Toe game incorporating traditional and numerical Tic Tac Toe in Python
+[NULL] Spite and Malice card game between two players in Python
 
-[NULL] Languages: TypeScript, JavaScript, Rust, Python, C++, Java, Bash
-[NULL] Frameworks: Next.js, React, Node, Flask, Jest, JUnit, Robotium, Selenium
-[NULL] Developer Tools: AWS Fargate, AWS ECS, Docker, Git, Prisma, Figma, Android Studio
+[HEADER] SKILLS
 
-[HEADER] Experience
+[NULL] Python, C, SQLite
+[NULL] Native in Urdu
+[NULL] Fluent in English and French
 
-[SUBHEADER] Software Developer Intern
-[SUBHEADER] InsideDesk Inc Toronto, ON
-[SUBHEADER] May 2023 – December 2023
+[HEADER] EXPERIENCE
+[SUBHEADER] | November 2021 - PresentStudent Contractor
+[SUBHEADER] Alberta Machine Intelligence Institute (Amii)
 
-[NULL] • Secured a $27,000 contract by developing four robust web automation micro-services using Puppeteer
-[NULL] • Led the overhaul of 24 micro-services by migrating to TypeScript and upgrading Docker images
-[NULL] • Boosted performance of an in-house library by implementing in-memory caching for frequently requested resources
-[NULL] • Implemented Bitbucket Pipeline configurations to build and upload Docker images to 4 development environments
+[NULL] Support Machine Learning Scientists at Amii coach startup companies in adopting ML in their SCALE AI -
+[NULL] Supply Chain AI West Program
+[NULL] Work within a team of 5 individuals
+[NULL] Provide insight around various ML topics and processes
 
-[SUBHEADER] Software Engineer Intern
-[SUBHEADER] Scotiabank Toronto, ON
-[SUBHEADER] May 2022 – Aug. 2022
+[SUBHEADER] VP Finance
+[SUBHEADER] Ada's Team
 
-[NULL] • Developed and automated a multi-tiered compliance tool using VBA saving 35+ hours of weekly manual work
-[NULL] • Devised a Python program to concatenate and format multiple csv files improving upload speed by 90%
-[NULL] • Led the development of an automated dashboard by using ActiveX and ADO connections in VBA
-[NULL] • Created a tool for Excel to SQL migration employed by the entire department improving lookup speed by over 400%
+[SUBHEADER] | May 2021 - Present
 
-[SUBHEADER] Data Science Intern
-[SUBHEADER] Scotiabank Toronto, ON
-[SUBHEADER] Jan. 2022 – Apr. 2022
+[NULL] Created and managed the budget of $40 000 for the fiscal year
+[NULL] Tracked all incoming and outgoing money flow in Excel sheet
+[NULL] Worked within team of 5-8 to organize over 6 technology-related workshops for university students
 
-[NULL] • Designed an isolation forest fraud detection algorithm using scikit in Python improving fraud flagging by 12%
-[NULL] • Analyzed 3 million+ data points using NumPy to compare fraud volume and rate in two different login streams
-[NULL] • Automated a data pipeline using Demisto to push a scalable fraud detection tool to production
-[NULL] • Improved data pull speed by 300% by utilizing multi-threading in Python to pull login data from IBM Security QRadar
+[SUBHEADER] Summer Day Camp Counsellor | Full-time | July - August 2019
+[SUBHEADER] YMCA
 
-[HEADER] Projects
+[NULL] Had full time responsibility for safety of up to 20 children between ages 3-12
+[NULL] Communicated between about 10 camps and 20 counsellors to ensure safety of all registered campers
+[NULL] Was responsible for medical and personal records of up to 20 children
 
-[SUBHEADER] FoodBook | Android Studio, Java, Firebase, JUnit, Robotium, YAML
+[HEADER] VOLUNTEER/EXTRACURRICULARS
 
-[NULL] • A fully functional android application for meal-planning and grocery shopping
-[NULL] • Devised a comparison algorithm to detect missing ingredients and integrated a Firebase real-time database
+[SUBHEADER] NeurAlberta Tech Machine Learning Workshops                                            | Present
+[SUBHEADER] WISER - Data Science 101: Intro to Tableau Workshop                                   | May 2021
+[SUBHEADER] Mentor in Ada's Mentors ~ 7.5h                                                                           |  November 2020 - April 2020
+[SUBHEADER] Grace Hopper Celebration Attendee                                                                  |  September 2020, 2021
+[SUBHEADER] Student Devcon Attendee                                                                                    |   January 2021
+[SUBHEADER] Wisest Choices Conference Volunteer  ~4h                                                      |  February 2020
 
-[SUBHEADER] Inclusify | React, Node.js, SQLite, Javascript, Azure Computer Vision API, Hootsuite API
+[HEADER] ACHIEVEMENTS & CERTIFICATIONS
 
-[NULL] • A Hack the North award-winning full-stack web application aimed to make social media posts inclusive
-[NULL] • Implemented 4 parallel API calls to post on Twitter, caption images, and check for language errors
-
-[SUBHEADER] ProtonNews | Next.js, Bun.js, FastAPI, Prisma, Cockroach DB, Cohere
-
-[NULL] • A full-stack news website which uses sentiment analysis and summarizing to exclusively display positive news
-[NULL] • Implemented a responsive front-end using server-side rendering and interfacing to CockroachDB using Prisma
-
-[SUBHEADER] NLP Undergraduate Research | Python, Flask, Bash, PyTorch, kenlm
-
-[NULL] • Research project under Dr. Carrie Demmans Epp lab to identify negative language transfer in translations
-[NULL] • Implemented an n-gram language model and an RNN using syntactic data and ran performance benchmarks
-
-[HEADER] Leadership Experience
-
-[SUBHEADER] Undergraduate Teaching Assistant | Faculty of Computing Science
-
-[NULL] • Led seminars, office hours, and grading for two computer courses, supporting 350+ students per semester
-
-[SUBHEADER] Vice President Administration | Computing Science Club
-
-[NULL] • Leading merchandise sales for 1000+ students, planning and execution of a graduation gala for 300+ students
-
-[SUBHEADER] Director of Communications | Bhangra Dance Club
-
-[NULL] • Founding member instrumental in obtaining $6000 in grants and organizing Diwali event for 160+ students
-
+[SUBHEADER] Certified bilingual with B2 DELF French Diploma | March 2019
+[SUBHEADER] Distinguished Service Award | May 2019
 
 """
 
@@ -101,4 +80,4 @@ result_list = split_lines_with_labels(input_text)
 
 # Print the result
 for item in result_list:
-    print(item)
+    print(item[0], item[1])

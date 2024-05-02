@@ -29,6 +29,7 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 import cv2
 import visualize_pages
+from pdf_mining import collect_headers
 
 def list_files(mypath):
 	f = []
@@ -65,9 +66,11 @@ def convert_img(img_path: str):
 def get_header_b_boxes(path: str):
 	params = LAParams(char_margin=200, line_margin=1)
 	pages = extract_pages(path, laparams=params)
-	for page in pages:
+	# for page in pages:
 		# page.analyze(params)
-		visualize_pages.show_ltitem_hierarchy(page)
+		# visualize_pages.show_ltitem_hierarchy(page)
+	print([l.get_text() for l in collect_headers(pages)])
+  		
 	
 if __name__ == "__main__":
 	pdf_path = "./dataset/"

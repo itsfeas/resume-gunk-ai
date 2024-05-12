@@ -84,8 +84,11 @@ if __name__ == "__main__":
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.05, random_state=19)
     # model = xgb.XGBClassifier()
     # model = xgb.XGBClassifier(max_depth=30, n_estimators=1000)
-    # model = MLPClassifier(random_state=1, max_iter=5000, hidden_layer_sizes=[500, 500, 500])
-    model = MLPClassifier(random_state=1, max_iter=10000, hidden_layer_sizes=[1000, 1000, 1000])
+    # model = MLPClassifier(random_state=1, max_iter=1000, hidden_layer_sizes=[150]*2)
+    # model = MLPClassifier(random_state=1, max_iter=5000, hidden_layer_sizes=[107, 412], early_stopping=True)
+    model = MLPClassifier(random_state=1, max_iter=5000, hidden_layer_sizes=[489, 244, 261], early_stopping=True)
+    # model = MLPClassifier(random_state=1, max_iter=5000, hidden_layer_sizes=[700, 500])
+    # model = MLPClassifier(random_state=1, max_iter=1000, hidden_layer_sizes=[50, 50, 2])
     # model = LinearSVC(C=1.0, class_weight=None, dual=True, fit_intercept=True,
 	#  intercept_scaling=1, loss='squared_hinge',
 	#  multi_class='ovr', penalty='l2', random_state=None, tol=0.0001,

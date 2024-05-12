@@ -1,4 +1,5 @@
 from collections import defaultdict, deque
+import math
 from os import walk
 import re
 from typing import Iterable, Iterator
@@ -29,6 +30,8 @@ SECTIONS_DICT = {
 	"certifications": ["certifications", "certification", "certificates", "relevant", "courses"],
 	"skills": ["technical", "skills"],
 	"additional": ["additional", "other", "information", "info"],
+    # model should be able to identify when project coordinator shows up, for example
+    "position_names": ["coordinator", "manager", "coordinator", "lead", "director", "engineer", "control"],
 }
 
 KEYWORD_TO_SECTION_DICT = {}
@@ -80,6 +83,10 @@ def is_bold_font(font: str) -> bool:
 def get_strength(font: str, size: int, is_upper: bool) -> bool:
     return size*(1.20 if is_bold_font(font) or is_upper else 1)
 
+@lru_cache(maxsize=1000)
+def get_color(color):
+    return sum(color)
+
 def iter_lines(pages: Iterator[layout.LTPage]) -> pd.DataFrame:
     q = deque(list(pages))
     q.reverse()
@@ -87,6 +94,7 @@ def iter_lines(pages: Iterator[layout.LTPage]) -> pd.DataFrame:
     reg = re.compile(r"^\s+$")
     # bfs to keep things in order
     text_strength_meta = [] # strength is a heuristic that takes into account (maybe) capitalization, font size, weight
+    # text_color_meta = []
     textbox_pos = []
     while q:
         el = q.pop()
@@ -98,17 +106,26 @@ def iter_lines(pages: Iterator[layout.LTPage]) -> pd.DataFrame:
             if isinstance(e, layout.LTTextLineHorizontal) and reg.match(e.get_text()) is None:
                 features = derive_features_for_line(e.get_text())
                 output_by_line.append(features)
-                tot, num = 0, 0
+                tot, color, num = 0, 0, 0
                 for char in e:
                     if char.__class__ == layout.LTChar:
                         tot += get_strength(char.fontname, char.size, char.get_text().isupper())
+                        # char_color = char.graphicstate.ncolor if char.graphicstate.ncolor else 0
+                        # color += get_color(tuple(char_color)) if isinstance(char_color, Iterable) else char_color
                         num += 1
                 text_strength_meta.append(tot/num)
+                # text_color_meta.append(color/num)
                 textbox_pos.append(cnt)
                 cnt += 1
             q.appendleft(e)
     text_strength_meta = np.array(text_strength_meta)
+    # text_color_meta = np.array(text_color_meta)
     text_strength_meta = pd.Series((text_strength_meta - text_strength_meta.mean()) / text_strength_meta.std(), name="text_size_meta")
+    # text_color_meta_std = text_color_meta.std()
+    # if text_color_meta_std != 0:
+    #     text_color_meta = pd.Series((text_color_meta - text_color_meta.mean()) / text_color_meta_std, name="text_color_meta")
+    # else:
+    #     text_color_meta = pd.Series(text_color_meta, name="text_color_meta")
     # print(textbox_pos)
     textbox_pos = pd.Series(textbox_pos, name="textbox_pos")
     # df_text_size_meta = pd.concat([text_size_meta], axis=0, ignore_index=True).add_prefix("text_size_meta_")

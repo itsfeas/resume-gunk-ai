@@ -161,3 +161,6 @@ cython_debug/
 **/.env
 **/gcp-cred.json
 **/dataset/*
+**/genetic.txt
+**/resume_parser_split
+**/optimal_resume_parser_split
